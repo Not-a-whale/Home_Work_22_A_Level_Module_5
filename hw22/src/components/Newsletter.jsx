@@ -26,6 +26,7 @@ const InputContainer = styled.div`
   background-color: white;
   justify-content: space-between;
   border: 1px solid lightgray;
+  display: flex;
 `;
 const Input = styled.input`
   border: none;
