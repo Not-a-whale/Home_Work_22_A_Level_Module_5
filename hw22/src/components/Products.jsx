@@ -1,7 +1,11 @@
-import React from 'react';
-import {popularProducts} from "../assets/js/data";
-import styled from 'styled-components';
+import React, {useEffect, useState} from 'react';
 import Product from "./Product";
+import axios from "axios";
+import {LocalStorageKeysEnum} from "../assets/constants/localStorageKeys.enum";
+import {IProduct} from "../assets/interfaces/IProduct";
+import styled from "styled-components";
+import {reactLocalStorage} from "reactjs-localstorage";
+import {DataManagementService} from "../services/DataManagementService";
 
 const Container = styled.div`
   padding: 20px;
@@ -10,15 +14,54 @@ const Container = styled.div`
   gap: 10px;
 `;
 
-const Products = (props) => {
+const Products = ({cat, filters, sort}) => {
+
+    const [products, setProducts] = useState([]);
+    const [filteredProducts, setFilteredProducts] = useState([]);
+
+    useEffect(() => {
+        const getProducts = async () => {
+            try {
+                await DataManagementService.getAllProducts(cat);
+                setProducts(DataManagementService.products);
+            } catch (err) {
+
+            }
+        }
+        getProducts();
+    }, [cat]);
+
+    useEffect(() => {
+        const allProducts = reactLocalStorage.getObject(LocalStorageKeysEnum.allProducts);
+        cat && setFilteredProducts(!filters ? allProducts : allProducts.filter(item => Object.entries(filters).every(([key, value]) => {
+            return item[key].includes(value)
+        })));
+    }, [cat, filters]);
+
+    useEffect(() => {
+        if((sort="newest")) {
+            setFilteredProducts(prev => {
+                return [...prev].sort((a, b) => a.createdAt - b.createdAt)
+            });
+        } else if((sort === "asc")) {
+            setFilteredProducts(prev => {
+                return [...prev].sort((a, b) => a.price - b.price)
+            })
+        } else {
+            setFilteredProducts(prev => {
+                return [...prev].sort((a, b) => b.price - a.price)
+            })
+        }
+    },[sort])
+
     const width = window.innerWidth;
     return (
         <Container width={width}>
-            {popularProducts.map((item, index) => (
+            { cat ? filteredProducts.map((item, index) => (
                 <Product item={item} key={index}/>
-            ))}
+            )) : products.map((item) => <Product item={item} key={item.id} />)}
         </Container>
-    )
+    );
 }
 
 export default Products;
