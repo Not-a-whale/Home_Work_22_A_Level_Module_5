@@ -4,12 +4,18 @@ import Announcement from "../components/Announcement";
 import Newsletter from "../components/Newsletter";
 import Footer from "../components/Footer";
 import {Add, Remove} from "@material-ui/icons";
+import {mobile} from "../assets/js/responsive";
+import {useEffect, useState} from "react";
+import {publicRequest} from "../requestMethods";
+import { useLocation } from "react-router-dom";
+import {DataManagementService} from "../services/DataManagementService";
 
 const Container = styled.div``;
 
 const Wrapper = styled.div`
   padding: 50px;
   display: flex;
+  ${mobile({ padding: "10px", flexDirection:"column" })}
 `;
 
 const ImgContainer = styled.div`
@@ -20,11 +26,13 @@ const Image = styled.img`
   width: 100%;
   height: 90vh;
   object-fit: cover;
+  ${mobile({ height: "40vh" })}
 `;
 
 const InfoContainer = styled.div`
   flex: 1;
   padding: 0px 50px;
+  ${mobile({ padding: "10px" })}
 `;
 
 const Title = styled.h1`
@@ -45,6 +53,7 @@ const FilterContainer = styled.div`
   margin: 30px 0;
   display: flex;
   justify-content: space-between;
+  ${mobile({ width: "100%" })}
 `;
 
 const Filter = styled.div`
@@ -78,6 +87,7 @@ const AddContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  ${mobile({ width: "100%" })}
 `;
 
 const AmountContainer = styled.div`
@@ -111,21 +121,38 @@ const Button = styled.button`
 `;
 
 const Product = (props) => {
+    const location = useLocation();
+    const id = location.pathname.split("/")[2];
+    const [product, setProduct] = useState({});
+    const [count, setCount] = useState(0);
+
+    function addToCart() {
+        DataManagementService.addToCart(id, count);
+    }
+
+    useEffect(() => {
+        const getProducts = async () => {
+            try {
+                const res = await publicRequest.get("/products/"+id);
+                setProduct(res.data);
+            } catch {
+
+            }
+        }
+        getProducts();
+    }, [id]);
     return (
         <Container>
-            <Navbar />
-            <Announcement />
             <Wrapper>
                 <ImgContainer>
-                    <Image src="https://i.ibb.co/S6qMxwr/jean.jpg" />
+                    <Image src={product.img} />
                 </ImgContainer>
                 <InfoContainer>
-                    <Title>Denim Jumpsuit</Title>
+                    <Title>{product.title}</Title>
                     <Desc>
-                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Blanditiis culpa deserunt fugiat in inventore molestias pariatur perspiciatis qui reprehenderit! Architecto ducimus, error explicabo fugit id incidunt nam nemo rem tenetur.
-                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aperiam autem consequatur, delectus dolorum, eaque esse excepturi fugit labore laudantium nostrum perspiciatis quod recusandae rem sequi voluptates. Animi culpa id maxime?
+                        {product.desc}
                     </Desc>
-                    <Price>$20</Price>
+                    <Price>${product.price}</Price>
                     <FilterContainer>
                         <Filter>
                             <FilterTitle>Color</FilterTitle>
@@ -148,11 +175,11 @@ const Product = (props) => {
                     </FilterContainer>
                     <AddContainer>
                         <AmountContainer>
-                            <Remove style={{cursor: "pointer"}}/>
-                            <Amount>1</Amount>
-                            <Add style={{cursor: "pointer"}}/>
+                            <Remove style={{cursor: "pointer"}} onClick={() => setCount(count > 0 ? count - 1 : 0)}/>
+                            <Amount>{count}</Amount>
+                            <Add style={{cursor: "pointer"}} onClick={() => setCount(count + 1)}/>
                         </AmountContainer>
-                        <Button>ADD TO CART</Button>
+                        <Button onClick={addToCart}>ADD TO CART</Button>
                     </AddContainer>
                 </InfoContainer>
             </Wrapper>
